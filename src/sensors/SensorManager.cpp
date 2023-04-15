@@ -93,6 +93,10 @@ namespace SlimeVR
                                 m_SensorsConfig[loop].address,
                                 m_SensorsConfig[loop].rotation);
                             break;
+
+                        case IMU_EMPTY:
+                            m_Sensors[loop] = new EmptySensor(loop);
+                            break;
                     }
                 }
 
