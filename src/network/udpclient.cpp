@@ -40,8 +40,7 @@ unsigned long lastPacketMs;
 
 bool connected = false;
 
-uint8_t sensorStateNotified1 = 0;
-uint8_t sensorStateNotified2 = 0;
+uint8_t sensorStateNotified[MAX_SENSOR_COUNT] = { false };
 unsigned long lastSensorInfoPacket = 0;
 
 uint8_t serialBuffer[128];
@@ -552,13 +551,17 @@ void returnLastPacket(int len) {
     }
 }
 
-void updateSensorState(Sensor * const sensor, Sensor * const sensor2) {
+void UpdateSensorState(Sensor **sensors) {
     if(millis() - lastSensorInfoPacket > 1000) {
         lastSensorInfoPacket = millis();
-        if(sensorStateNotified1 != sensor->getSensorState())
-            Network::sendSensorInfo(sensor);
-        if(sensorStateNotified2 != sensor2->getSensorState())
-            Network::sendSensorInfo(sensor2);
+
+        for (int loop = 0; loop < MAX_SENSOR_COUNT; loop++) {
+            if (sensors[loop]) {
+                if(sensorStateNotified[loop] != sensors[loop]->getSensorState()) {
+                    Network::sendSensorInfo(sensors[loop]);
+                }
+            }
+        }
     }
 }
 
@@ -573,10 +576,12 @@ void ServerConnection::connect()
         int packetSize = Udp.parsePacket();
         if (packetSize)
         {
+#ifndef DEBUG_NETWORK
+            // receive incoming UDP packets
+            Udp.read(incomingPacket, sizeof(incomingPacket));
+#else
             // receive incoming UDP packets
             int len = Udp.read(incomingPacket, sizeof(incomingPacket));
-            
-#ifdef DEBUG_NETWORK
             udpClientLogger.trace("Received %d bytes from %s, port %d", packetSize, Udp.remoteIP().toString().c_str(), Udp.remotePort());
             udpClientLogger.traceArray("UDP packet contents: ", incomingPacket, len);
 #endif
@@ -625,7 +630,7 @@ void ServerConnection::resetConnection() {
     statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, true);
 }
 
-void ServerConnection::update(Sensor * const sensor, Sensor * const sensor2) {
+void ServerConnection::update(Sensor **sensors) {
     if(connected) {
         int packetSize = Udp.parsePacket();
         if (packetSize)
@@ -665,12 +670,16 @@ void ServerConnection::update(Sensor * const sensor, Sensor * const sensor2) {
                     udpClientLogger.warn("Wrong sensor info packet");
                     break;
                 }
-                if(incomingPacket[4] == sensor->getSensorId()) {
-                    sensorStateNotified1 = incomingPacket[5];
+
+                for (int loop = 0; loop < MAX_SENSOR_COUNT; loop++) {
+                    if (sensors[loop]) {
+                        if (incomingPacket[4] == sensors[loop]->getSensorId()) {
+                            sensorStateNotified[loop] = incomingPacket[5];
+                            break; // end loop
+                        }
+                    }
                 }
-                else if(incomingPacket[4] == sensor2->getSensorId()) {
-                    sensorStateNotified2 = incomingPacket[5];
-                }
+
                 break;
             }
         }
@@ -683,15 +692,25 @@ void ServerConnection::update(Sensor * const sensor, Sensor * const sensor2) {
             statusManager.setStatus(SlimeVR::Status::SERVER_CONNECTING, true);
 
             connected = false;
-            sensorStateNotified1 = false;
-            sensorStateNotified2 = false;
+
+            for (int loop = 0; loop < MAX_SENSOR_COUNT; loop++) {
+                sensorStateNotified[loop] = false;
+            }
+
             udpClientLogger.warn("Connection to server timed out");
         }
     }
         
     if(!connected) {
         connect();
-    } else if(sensorStateNotified1 != sensor->isWorking() || sensorStateNotified2 != sensor2->isWorking()) {
-        updateSensorState(sensor, sensor2);
+    } else {
+        for (int loop = 0; loop < MAX_SENSOR_COUNT; loop++) {
+            if (sensors[loop]) {
+                if (sensorStateNotified[loop] != sensors[loop]->isWorking()) {
+                    UpdateSensorState(sensors);
+                    break; // end loop
+                }
+            }
+        }
     }
 }

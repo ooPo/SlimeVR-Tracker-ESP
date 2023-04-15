@@ -29,19 +29,32 @@
 #include "EmptySensor.h"
 #include "logging/Logger.h"
 
+#define MAX_SENSOR_COUNT 10
+
 namespace SlimeVR
 {
     namespace Sensors
     {
         class SensorManager
         {
+
         public:
-            SensorManager()
-                : m_Logger(SlimeVR::Logging::Logger("SensorManager")), m_Sensor1(new EmptySensor(0)), m_Sensor2(new EmptySensor(0)) {}
+
+            SensorManager() : m_Logger(SlimeVR::Logging::Logger("SensorManager")), m_Sensors{NULL}
+            {
+                // Do nothing.
+            }
+
             ~SensorManager()
             {
-                delete m_Sensor1;
-                delete m_Sensor2;
+                for (int loop = 0; loop < MAX_SENSOR_COUNT; loop++)
+                {
+                    if (m_Sensors[loop])
+                    {
+                        delete m_Sensors[loop];
+                        m_Sensors[loop] = NULL;
+                    }
+                }
             }
 
             void setup();
@@ -49,14 +62,34 @@ namespace SlimeVR
 
             void update();
 
-            Sensor *getFirst() { return m_Sensor1; };
-            Sensor *getSecond() { return m_Sensor2; };
+            Sensor **getSensors()
+            {
+                return m_Sensors;
+            }
+
+            Sensor *getSensor(int index)
+            {
+                if (index >= MAX_SENSOR_COUNT) { return NULL; }
+                return m_Sensors[index];
+            }
 
         private:
-            SlimeVR::Logging::Logger m_Logger;
 
-            Sensor *m_Sensor1;
-            Sensor *m_Sensor2;
+            SlimeVR::Logging::Logger m_Logger = NULL;
+            Sensor *m_Sensors[MAX_SENSOR_COUNT] = {NULL};
+
+            struct {
+                uint8_t type;
+                uint8_t address;
+                float rotation;
+                uint8_t intPin;
+            }
+            m_SensorsConfig[MAX_SENSOR_COUNT] =
+            {
+                { IMU,        0, IMU_ROTATION,        PIN_IMU_INT   },
+                { SECOND_IMU, 0, SECOND_IMU_ROTATION, PIN_IMU_INT_2 },
+            };
+
         };
     }
 }

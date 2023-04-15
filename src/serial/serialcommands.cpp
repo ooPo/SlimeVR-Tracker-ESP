@@ -66,22 +66,20 @@ namespace SerialCommands {
             statusManager.getStatus(),
             WiFiNetwork::getWiFiState()
         );
-        Sensor* sensor1 = sensorManager.getFirst();
-        Sensor* sensor2 = sensorManager.getSecond();
-        logger.info(
-            "Sensor 1: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
-            getIMUNameByType(sensor1->getSensorType()),
-            UNPACK_QUATERNION(sensor1->getQuaternion()),
-            sensor1->isWorking() ? "true" : "false",
-            sensor1->hadData ? "true" : "false"
-        );
-        logger.info(
-            "Sensor 2: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
-            getIMUNameByType(sensor2->getSensorType()),
-            UNPACK_QUATERNION(sensor2->getQuaternion()),
-            sensor2->isWorking() ? "true" : "false",
-            sensor2->hadData ? "true" : "false"
-        );
+
+        Sensor* *sensors = sensorManager.getSensors();
+
+        for (int loop = 0; loop < MAX_SENSOR_COUNT; loop++) {
+            if (sensors[loop]) {
+                logger.info(
+                    "Sensor %d: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s", loop,
+                    getIMUNameByType(sensors[loop]->getSensorType()),
+                    UNPACK_QUATERNION(sensors[loop]->getQuaternion()),
+                    sensors[loop]->isWorking() ? "true" : "false",
+                    sensors[loop]->hadData ? "true" : "false"
+                );
+            }
+        }
     }
 
     void cmdGet(CmdParser * parser) {
@@ -145,16 +143,16 @@ namespace SerialCommands {
                 statusManager.getStatus(),
                 WiFiNetwork::getWiFiState()
             );
-            Sensor* sensor1 = sensorManager.getFirst();
-            sensor1->motionLoop();
+            Sensor* sensor = sensorManager.getSensor(0);
+            sensor->motionLoop();
             logger.info(
                 "[TEST] Sensor 1: %s (%.3f %.3f %.3f %.3f) is working: %s, had data: %s",
-                getIMUNameByType(sensor1->getSensorType()),
-                UNPACK_QUATERNION(sensor1->getQuaternion()),
-                sensor1->isWorking() ? "true" : "false",
-                sensor1->hadData ? "true" : "false"
+                getIMUNameByType(sensor->getSensorType()),
+                UNPACK_QUATERNION(sensor->getQuaternion()),
+                sensor->isWorking() ? "true" : "false",
+                sensor->hadData ? "true" : "false"
             );
-            if(!sensor1->hadData) {
+            if(!sensor->hadData) {
                 logger.error("[TEST] Sensor 1 didn't send any data yet!");
             } else {
                 logger.info("[TEST] Sensor 1 sent some data, looks working.");
@@ -194,21 +192,35 @@ namespace SerialCommands {
 
     void cmdTemperatureCalibration(CmdParser* parser) {
         if (parser->getParamCount() > 1) {
+            Sensor* *sensors = sensorManager.getSensors();
+
             if (parser->equalCmdParam(1, "PRINT")) {
-                sensorManager.getFirst()->printTemperatureCalibrationState();
-                sensorManager.getSecond()->printTemperatureCalibrationState();
+                for (int loop = 0; loop < MAX_SENSOR_COUNT; loop++) {
+                    if (sensors[loop]) {
+                        sensors[loop]->printTemperatureCalibrationState();
+                    }
+                }
                 return;
             } else if (parser->equalCmdParam(1, "DEBUG")) {
-                sensorManager.getFirst()->printDebugTemperatureCalibrationState();
-                sensorManager.getSecond()->printDebugTemperatureCalibrationState();
+                for (int loop = 0; loop < MAX_SENSOR_COUNT; loop++) {
+                    if (sensors[loop]) {
+                        sensors[loop]->printDebugTemperatureCalibrationState();
+                    }
+                }
                 return;
             } else if (parser->equalCmdParam(1, "RESET")) {
-                sensorManager.getFirst()->resetTemperatureCalibrationState();
-                sensorManager.getSecond()->resetTemperatureCalibrationState();
+                for (int loop = 0; loop < MAX_SENSOR_COUNT; loop++) {
+                    if (sensors[loop]) {
+                        sensors[loop]->resetTemperatureCalibrationState();
+                    }
+                }
                 return;
             } else if (parser->equalCmdParam(1, "SAVE")) {
-                sensorManager.getFirst()->saveTemperatureCalibration();
-                sensorManager.getSecond()->saveTemperatureCalibration();
+                for (int loop = 0; loop < MAX_SENSOR_COUNT; loop++) {
+                    if (sensors[loop]) {
+                        sensors[loop]->saveTemperatureCalibration();
+                    }
+                }
                 return;
             }
         }
