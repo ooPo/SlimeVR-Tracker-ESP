@@ -2998,8 +2998,8 @@ bool MPU9250_Base::writeMemoryBlock(const uint8_t *data, uint16_t dataSize, uint
     setMemoryBank(bank);
     setMemoryStartAddress(address);
     uint8_t chunkSize;
-    uint8_t *verifyBuffer;
-    uint8_t *progBuffer;
+    uint8_t *verifyBuffer = NULL;
+    uint8_t *progBuffer = NULL;
     uint16_t i;
     uint8_t j;
     if (verify) verifyBuffer = (uint8_t *)malloc(MPU9250_DMP_MEMORY_CHUNK_SIZE);
@@ -3074,7 +3074,7 @@ bool MPU9250_Base::writeProgMemoryBlock(const uint8_t *data, uint16_t dataSize, 
     return writeMemoryBlock(data, dataSize, bank, address, verify, true);
 }
 bool MPU9250_Base::writeDMPConfigurationSet(const uint8_t *data, uint16_t dataSize, bool useProgMem) {
-    uint8_t *progBuffer, success, special;
+    uint8_t *progBuffer = NULL, success, special;
     uint16_t i, j;
     if (useProgMem) {
         progBuffer = (uint8_t *)malloc(8); // assume 8-byte blocks, realloc later if necessary

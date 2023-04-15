@@ -46,58 +46,53 @@ namespace SlimeVR
                     m_Sensors[loop] = NULL;
                 }
 
-                if (I2CSCAN::isI2CExist(m_SensorsConfig[loop].address))
+                switch(m_SensorsConfig[loop].type)
                 {
-                    m_Logger.trace("IMU #%d found at address 0x%02X!", loop, m_SensorsConfig[loop].address);
+                    case IMU_BNO080:
+                    case IMU_BNO085:
+                    case IMU_BNO086:
+                        m_Sensors[loop] = new BNO080Sensor(loop,
+                            m_SensorsConfig[loop].type,
+                            m_SensorsConfig[loop].address,
+                            m_SensorsConfig[loop].rotation,
+                            m_SensorsConfig[loop].intPin);
+                        break;
 
-                    switch(m_SensorsConfig[loop].type)
-                    {
-                        case IMU_BNO080:
-                        case IMU_BNO085:
-                        case IMU_BNO086:
-                            m_Sensors[loop] = new BNO080Sensor(loop,
-                                m_SensorsConfig[loop].type,
-                                m_SensorsConfig[loop].address,
-                                m_SensorsConfig[loop].rotation,
-                                m_SensorsConfig[loop].intPin);
-                            break;
+                    case IMU_BNO055:
+                        m_Sensors[loop] = new BNO055Sensor(loop,
+                            m_SensorsConfig[loop].address,
+                            m_SensorsConfig[loop].rotation);
+                        break;
 
-                        case IMU_BNO055:
-                            m_Sensors[loop] = new BNO055Sensor(loop,
-                                m_SensorsConfig[loop].address,
-                                m_SensorsConfig[loop].rotation);
-                            break;
+                    case IMU_MPU9250:
+                        m_Sensors[loop] = new MPU9250Sensor(loop,
+                            m_SensorsConfig[loop].address,
+                            m_SensorsConfig[loop].rotation);
+                        break;
 
-                        case IMU_MPU9250:
-                            m_Sensors[loop] = new MPU9250Sensor(loop,
-                                m_SensorsConfig[loop].address,
-                                m_SensorsConfig[loop].rotation);
-                            break;
+                    case IMU_BMI160:
+                        m_Sensors[loop] = new BMI160Sensor(loop,
+                            m_SensorsConfig[loop].address,
+                            m_SensorsConfig[loop].rotation);
+                        break;
 
-                        case IMU_BMI160:
-                            m_Sensors[loop] = new BMI160Sensor(loop,
-                                m_SensorsConfig[loop].address,
-                                m_SensorsConfig[loop].rotation);
-                            break;
+                    case IMU_MPU6500:
+                    case IMU_MPU6050:
+                        m_Sensors[loop] = new MPU6050Sensor(loop,
+                            m_SensorsConfig[loop].type,
+                            m_SensorsConfig[loop].address,
+                            m_SensorsConfig[loop].rotation);
+                        break;
 
-                        case IMU_MPU6500:
-                        case IMU_MPU6050:
-                            m_Sensors[loop] = new MPU6050Sensor(loop,
-                                m_SensorsConfig[loop].type,
-                                m_SensorsConfig[loop].address,
-                                m_SensorsConfig[loop].rotation);
-                            break;
+                    case IMU_ICM20948:
+                        m_Sensors[loop] = new ICM20948Sensor(loop,
+                            m_SensorsConfig[loop].address,
+                            m_SensorsConfig[loop].rotation);
+                        break;
 
-                        case IMU_ICM20948:
-                            m_Sensors[loop] = new ICM20948Sensor(loop,
-                                m_SensorsConfig[loop].address,
-                                m_SensorsConfig[loop].rotation);
-                            break;
-
-                        case IMU_EMPTY:
-                            m_Sensors[loop] = new EmptySensor(loop);
-                            break;
-                    }
+                    case IMU_EMPTY:
+                        m_Sensors[loop] = new EmptySensor(loop);
+                        break;
                 }
 
                 if (m_Sensors[loop]) {
