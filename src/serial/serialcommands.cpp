@@ -192,6 +192,21 @@ namespace SerialCommands {
         ESP.restart();
     }
 
+    void cmdScan(CmdParser* parser) {
+        int foundCount = 0;
+
+        logger.info("SCANNING I2C BUS");
+
+        for (int loop = 0; loop < 256; loop++) {
+            if (I2CSCAN::isI2CExist(loop)) {
+                logger.info("FOUND I2C DEVICE: 0x%02X", loop);
+                foundCount++;
+            }
+        }
+
+        logger.info("FOUND: %d I2C DEVICES", foundCount);
+    }
+
     void cmdTemperatureCalibration(CmdParser* parser) {
         if (parser->getParamCount() > 1) {
 
@@ -239,6 +254,7 @@ namespace SerialCommands {
         cmdCallbacks.addCmd("GET", &cmdGet);
         cmdCallbacks.addCmd("FRST", &cmdFactoryReset);
         cmdCallbacks.addCmd("REBOOT", &cmdReboot);
+        cmdCallbacks.addCmd("SCAN", &cmdScan);
         cmdCallbacks.addCmd("TCAL", &cmdTemperatureCalibration);
     }
 
